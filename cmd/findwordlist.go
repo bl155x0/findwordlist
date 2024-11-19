@@ -85,7 +85,7 @@ func searchAllWordlists (directory, searchstring string) ([]Wordlist, error)  {
 		// Check if it's a file, not a directory
     if(!info.IsDir()){
       i++
-		  if (strings.Contains(path, searchstring)){
+		  if (strings.Contains(strings.ToLower(path), strings.ToLower(searchstring))){
         wordlist := Wordlist {
           Id: i,
           Path: path,
