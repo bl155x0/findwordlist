@@ -4,7 +4,9 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/user"
 	"path"
@@ -60,7 +62,9 @@ var rootCmd = &cobra.Command{
     } else {
       //Print all results
       for _, wordlist := range wordlists {
-        fmt.Printf("%d - %s\n", wordlist.Id, wordlist.Path)
+        lineCount, err := lineCount(wordlist.Path)
+        cobra.CheckErr(err)
+        fmt.Printf("%d - %s - (%d lines)\n", wordlist.Id, wordlist.Path, lineCount)
       }
     }
    },
@@ -86,6 +90,7 @@ func searchAllWordlists (directory, searchstring string) ([]Wordlist, error)  {
     if(!info.IsDir()){
       i++
 		  if (strings.Contains(strings.ToLower(path), strings.ToLower(searchstring))){
+
         wordlist := Wordlist {
           Id: i,
           Path: path,
@@ -98,6 +103,29 @@ func searchAllWordlists (directory, searchstring string) ([]Wordlist, error)  {
 
   return wordlists, err;
 }
+
+func lineCount(filePath string) (int, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	count := 0
+	for {
+		_, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return 0, err
+		}
+		count++
+	}
+	return count, nil
+}
+
 
 
 // Execute adds all child commands to the root command and sets flags appropriately.
