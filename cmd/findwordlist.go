@@ -64,7 +64,8 @@ var rootCmd = &cobra.Command{
       for _, wordlist := range wordlists {
         lineCount, err := lineCount(wordlist.Path)
         cobra.CheckErr(err)
-        fmt.Printf("%d - %s - (%d lines)\n", wordlist.Id, wordlist.Path, lineCount)
+        //fmt.Printf("%d - %s - (%d lines)\n", wordlist.Id, wordlist.Path, lineCount)
+        fmt.Printf("%s [#%d] [%d lines]\n", wordlist.Path, wordlist.Id, lineCount)
       }
     }
    },

@@ -1,0 +1,73 @@
+# findwl - interactively select a wordlist using `findwordlist` and store selection in an env variable
+findwl() {
+    local varname="W"
+    local OPTIND opt
+
+    local usage="
+findwl - interactively select a wordlist and store selection in an env variable
+
+Usage:
+  findwl [-e VAR_NAME] [args...]
+
+Options:
+  -e VAR_NAME  Specify the environment variable name to store the selection (default: \$W)
+
+Arguments:
+  args         Arguments passed to findwordlist command
+
+Output:
+  Exports the selected filename in the specified env variable or unsets it if no selection was made.
+"
+    # Check for --help anywhere in args
+    for arg in "$@"; do
+        if [[ "$arg" == "--help" ]]; then
+            echo "$usage"
+            return 0
+        fi
+    done
+
+    # Parse options: only -e expected
+    while getopts ":e:" opt; do
+        case $opt in
+            e)
+                varname="$OPTARG"
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                return 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND -1))
+
+    # Check if findwordlist command is available, else try current dir
+    if ! command -v findwordlist >/dev/null 2>&1; then
+        if [[ -x ./findwordlist ]]; then
+            FINDWORDLIST="./findwordlist"
+        else
+            echo "Error: 'findwordlist' command not found in PATH or current directory."
+            return 1
+        fi
+    else
+        FINDWORDLIST="findwordlist"
+    fi
+
+    # Check if fzf command is available
+    command -v fzf >/dev/null 2>&1 || { echo "Error: 'fzf' command not found. Please install it and try again."; return 1; }
+
+    # Run findwordlist with remaining arguments and pipe to fzf
+    selected=$($FINDWORDLIST "$@" | fzf)
+
+    if [[ -n "$selected" ]]; then
+        filename=$(echo "$selected" | awk '{print $1}')
+        export "$varname"="$filename"
+        echo "Selected wordlist stored in variable \$$varname"
+    else
+        echo "No wordlist selected."
+        unset "$varname"
+    fi
+}
