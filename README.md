@@ -1,6 +1,6 @@
 # About
 
-findwordlist is a tiny helper that makes working with wordlists on the command line seamless.
+`findwordlist`|`findwl` is a tiny helper that makes working with wordlists on the command line seamless.
 It integrates with `fzf` to let you search, filter, and pick a wordlist interactively, then automatically stores your choice in the environment variable `$W`.
 
 Once set, `$W` can be reused across your favorite tools: no more hunting for long file paths when switching wordlists.
