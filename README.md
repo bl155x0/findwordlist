@@ -1,24 +1,30 @@
 # About
 
-A helper utility for dealing with wordlists on the command line.
+findwordlist is a tiny helper that makes working with wordlists on the command line seamless.
+It integrates with fzf to let you search, filter, and pick a wordlist interactively, then automatically stores your choice in the environment variable $W.
 
+Once set, $W can be reused across your favorite tools — no more hunting for long file paths when switching wordlists.
+
+# Prerequisite
+
+* A recent version of `fzf` (https://github.com/junegunn/fzf)
+  
+# Installation
+
+```
+$ go install github.com/bl155x0/findwordlist@v0.3.0
+$ export WORDLISTS=/opt/mywordlists
+$ alias findwl='eval $(findwordlist)'
+```
 # Usage
 
 Use `findwl` to search for wordlist
 
 ```bash
 
-# fiwndwl <SEARCH_TERM>
-$ findwl password
-```
+# select the wordlist
+$ findwl
 
-The `fzf` support allows to seamlessly select a wordlist from the search results.
-<img width="1115" height="319" alt="grafik" src="https://github.com/user-attachments/assets/51f68f0a-4205-4499-986a-33e9285cb92e" />
-
-
-After selecting a wordlist the path to the list is stored in the $W environment variable and can be used with any command.
-
-```bash
-# The wordlist can be referenced with $W
-$ john --wordlist=$W hash.txt
+# reference it with $W
+$ ffuf -u http://localhost:FUZZ -w $W
 ```
