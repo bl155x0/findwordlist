@@ -12,8 +12,13 @@ Once set, `$W` can be reused across your favorite tools: no more hunting for lon
 # Installation
 
 ```
+# install findwordlist
 $ go install github.com/bl155x0/findwordlist@v0.3.0
+
+# Set the directory which contains your wordlists
 $ export WORDLISTS=/opt/mywordlists
+
+# Set and alias 
 $ alias findwl='eval $(findwordlist)'
 ```
 # Usage
