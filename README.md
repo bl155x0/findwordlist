@@ -4,10 +4,21 @@ A helper utility for dealing with wordlists on the command line.
 
 # Usage
 
-Find a wordlist
+Use `findwl` to search for wordlist
 
-![1](https://github.com/user-attachments/assets/450b5021-b597-47f6-bac3-7dede8ed1d33)
+```bash
 
-Use the wordlist
+# fiwndwl <SEARCH_TERM>
+$ findwl password
+```
 
-![2](https://github.com/user-attachments/assets/15ae9341-93f3-460b-8848-0be9a9155432)
+The `fzf` support allows to seamlessly select a wordlist from the search results.
+<img width="1115" height="319" alt="grafik" src="https://github.com/user-attachments/assets/51f68f0a-4205-4499-986a-33e9285cb92e" />
+
+
+After selecting a wordlist the path to the list is stored in the $W environment variable and can be used with any command.
+
+```bash
+# The wordlist can be referenced with $W
+$ john --wordlist=$W hash.txt
+```
