@@ -4,10 +4,9 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
@@ -21,7 +20,7 @@ type Wordlist struct {
   Path string
 }
 
-var index int
+var versionFlag bool
 var source string
 
 // rootCmd represents the base command when called without any subcommands
@@ -31,43 +30,26 @@ var rootCmd = &cobra.Command{
   Long: `findwordlist: A small tool that simplifies working with wordlists in the shell.`,
 	Run: func(cmd *cobra.Command, args []string) { 
 
-    //is a searchstring given?
-    searchstring := ""
-    if(len(args) > 0){
-      searchstring = args[0]
-    }
+		//Just print the version and exit
+		if(versionFlag) {
+			fmt.Println("findwordlist version 0.3")
+			return
+		}
 
-    //using the given directory or the default directory in the user's $HOME
-    directory := ""
-    if (source != ""){
-       directory = source
-    } else {
-      home, err := getHomeDirectory()
-      cobra.CheckErr(err)
-
-      directory = path.Join(home, "opt/wordlists")
-    }
-
-    //getting all files in the directory
-    wordlists, err := searchAllWordlists(directory, searchstring)
+		//Determine the wordlist directory
+    directory,err := getWordlistDirectory(source)
     cobra.CheckErr(err)
 
-    if (index > -1) {
-      //print a Specific wordlist by ID
-      for _, wordlist := range wordlists {
-        if(wordlist.Id == index) {
-          fmt.Printf("%s\n", wordlist.Path)
-        }
-      }
-    } else {
-      //Print all results
-      for _, wordlist := range wordlists {
-        lineCount, err := lineCount(wordlist.Path)
-        cobra.CheckErr(err)
-        //fmt.Printf("%d - %s - (%d lines)\n", wordlist.Id, wordlist.Path, lineCount)
-        fmt.Printf("%s [#%d] [%d lines]\n", wordlist.Path, wordlist.Id, lineCount)
-      }
-    }
+		//Search  wordlists
+		wordlists, err := searchAllWordlists(directory)
+    cobra.CheckErr(err)
+
+		//call fzf and let the user select which wordlist to use
+		selection, err := fzf(wordlists)
+    cobra.CheckErr(err)
+
+		//print the selection ready to be evaluated by a shell
+		fmt.Printf("export W=%q\n", selection)
    },
 }
 
@@ -79,7 +61,7 @@ func getHomeDirectory() (string, error) {
   return user.HomeDir, nil
 }
 
-func searchAllWordlists (directory, searchstring string) ([]Wordlist, error)  {
+func searchAllWordlists (directory string) ([]Wordlist, error)  {
   var wordlists []Wordlist
   i := 0;
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
@@ -89,15 +71,12 @@ func searchAllWordlists (directory, searchstring string) ([]Wordlist, error)  {
 
 		// Check if it's a file, not a directory
     if(!info.IsDir()){
-      i++
-		  if (strings.Contains(strings.ToLower(path), strings.ToLower(searchstring))){
-
-        wordlist := Wordlist {
-          Id: i,
-          Path: path,
-        }
-			  wordlists = append(wordlists, wordlist)
-		  }
+			i++
+			wordlist := Wordlist {
+				Id: i,
+				Path: path,
+			}
+			wordlists = append(wordlists, wordlist)
     }
 		return nil
 	})
@@ -105,29 +84,49 @@ func searchAllWordlists (directory, searchstring string) ([]Wordlist, error)  {
   return wordlists, err;
 }
 
-func lineCount(filePath string) (int, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
 
-	reader := bufio.NewReader(file)
-	count := 0
-	for {
-		_, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return 0, err
-		}
-		count++
+// getWordlistDirectory determines the directory of wordlists to 
+// It just returns the givenDirectory is not empty,
+// otherwise it reads the WORDLISTS env variable and returns it's value 
+// if the variable is not set, the directory "~/opt/wordlists/" is returned as fallback
+func getWordlistDirectory(givenDirectory string) (string,error)  {
+	//Use the given directory as highes priority
+	if(givenDirectory != ""){
+		return givenDirectory, nil
 	}
-	return count, nil
+
+	//Next check if the WORDLISTS env variable is set
+	envWordlists := os.Getenv("WORDLISTS")
+	if (envWordlists != "") {
+		return envWordlists,nil
+	}
+
+	//If nothing fall back to ~/opt/wordlists
+	home, err := getHomeDirectory()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(home, "opt/wordlists"), nil
 }
 
+// call fzf and pass a list of wordlist
+func fzf(wordlists []Wordlist) (string, error) {
+	//prozess the given wordlis
+	var lists []string
+	for _, list := range wordlists {
+		lists = append(lists, list.Path)
+	}
 
+	//call fzf
+	cmd := exec.Command("fzf")
+	cmd.Stdin = strings.NewReader(strings.Join(lists, "\n"))
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	selection := strings.TrimSpace(string(out))
+	return selection, nil
+}
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -140,7 +139,6 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringVarP(&source,"source", "s", "", "Specifies the directory to search for wordlist files")
-	rootCmd.Flags().IntVarP(&index, "index", "i", -1, "Specifies the index of a single wordlist")
+	rootCmd.Flags().BoolVar(&versionFlag,"version", false, "Prints version and exit")
 }
-
 
