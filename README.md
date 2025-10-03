@@ -28,3 +28,7 @@ $ findwl
 # reference it with $W
 $ ffuf -u http://localhost/FUZZ -w $W
 ```
+
+## Example
+
+[![asciicast](https://asciinema.org/a/e6s85OqWWakDQgELSnUkbuhM3.svg)](https://asciinema.org/a/e6s85OqWWakDQgELSnUkbuhM3)
